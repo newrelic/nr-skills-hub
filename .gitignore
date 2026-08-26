@@ -1,1 +1,10 @@
+# OS
 .DS_Store
+
+# Editors / IDEs
+.idea/
+.vscode/
+*.swp
+
+# Local agent config
+.claude/settings.local.json
