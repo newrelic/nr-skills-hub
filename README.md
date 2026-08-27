@@ -43,7 +43,6 @@ privileges, and required scopes. Read it before enabling that skill.
 
 ```
 skills/
-├── skill-manifest.template.md    # copy this when adding a skill
 └── <skill-name>/
     ├── SKILL.md                  # the instructions the agent loads
     ├── queries.md                # NRQL reference the skill reads
@@ -92,4 +91,9 @@ New skills need approval for the publication venue before merge, and must meet t
 
 ## License
 
-Apache 2.0. See [`LICENSE`](LICENSE).
+Apache 2.0. See [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE).
+
+A copy of the licence also sits in each skill directory. Skills are meant to be copied out
+individually into an agent's skills location, and a copy that travels without its licence is a
+copy a downstream redistributor cannot comply with — Apache 2.0 section 4(a) requires giving
+recipients a copy of the License, not a link to it.
