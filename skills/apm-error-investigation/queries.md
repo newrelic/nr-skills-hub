@@ -1,7 +1,15 @@
 # APM Error Investigation Queries
 
-The hand-written NRQL path, for questions the purpose-built tools don't cover. If a typed tool answers the
-step, prefer it — it resolves the attribute names below for you, and most of the traps here stop existing.
+The NRQL for this workflow. **§1, §2 and §2c are the designated path for steps 3a–3c** — the skill runs
+them through `execute_nrql_query` rather than a typed error tool, so treat these templates as the
+instructions for those steps, not as a fallback.
+
+That makes the attribute reference below load-bearing. `execute_nrql_query` executes exactly what you
+write: it does not resolve attribute names for you, and every trap documented here returns wrong or empty
+results rather than an error. Take the templates as written and change only the placeholders.
+
+Step 4 is the exception. Reconstructing a distributed trace is not something NRQL can do at all — see §3
+and the note below it.
 
 ## Contents
 
@@ -16,8 +24,8 @@ step, prefer it — it resolves the attribute names below for you, and most of t
 
 **Query 3 is not sufficient for trace reconstruction, and this is structural — not a query you can improve.**
 NRQL is scoped to one account; a distributed trace is not. `FROM Span WHERE traceId = …` returns only the
-queried account's slice and gives no sign that the rest exists. Measured twice: 269 of 1233 spans, and 25 of
-163 spans, with the real bottleneck missing from both.
+queried account's slice and gives no sign that the rest exists. Measured repeatedly: a single-account query
+returned a small fraction of the trace's spans, with the real bottleneck missing every time.
 
 For "which service caused this", prefer a trace-level tool that takes a trace ID and resolves the whole trace
 across accounts, returning per-service self-time, the service call graph, error spans and the slowest path.
@@ -39,9 +47,9 @@ Trace-ID field per event type — `TransactionError` uses **`traceId`**, `Log` u
 Entity field per event type. Both names exist on `TransactionError`, but only one is reliably populated,
 so picking wrong silently undercounts instead of erroring:
 
-| Event | Filter on | Coverage (air-staging) |
+| Event | Filter on | Coverage |
 |---|---|---|
-| `TransactionError` | **`entityGuid`** | 100% — `entity.guid` is only ~17%, dropping ~61% of an entity's errors |
+| `TransactionError` | **`entityGuid`** | fully populated — `entity.guid` is sparse, dropping most of an entity's errors |
 | `Span` | `entity.guid` | populated |
 | `Log` | `entity.guid` | populated |
 
@@ -64,7 +72,7 @@ Answers "which error actually matters". Do this **before** looking at traces —
 yields ~1 row per trace and cannot rank anything.
 
 `AND error.expected IS FALSE` is part of the default, not an option. Handled errors normally outnumber real
-ones — 89% of rows on `nrai-mcp-server (staging)` — so without it the ranking is topped by auth rejections
+ones — commonly the large majority of rows — so without it the ranking is topped by auth rejections
 and probe 405s, and the investigation follows the healthy path.
 
 ```sql
@@ -84,9 +92,9 @@ LIMIT 10
 
 `traces` is the impact figure to quote, not `occurrences`. Each layer that catches and re-raises writes its
 own row, so one incident can appear as two or three groups with near-identical counts, and adding them up
-overstates it. Verified: a query timeout returned 83 rows over 42 distinct traces, split across a group of 42
-(inner exception) and a group of 40 (the wrapper around it). When one group's message contains another's,
-collapse them and present the pair as a single failure.
+overstates it. Verified on a real incident: a query timeout produced roughly twice as many rows as distinct
+traces, split across two near-equal groups — the inner exception, and the wrapper around it. When one group's
+message contains another's, collapse them and present the pair as a single failure.
 
 Report what the expected filter removed, so the exclusion is visible rather than silent:
 
@@ -109,12 +117,18 @@ Optional filters:
 
 ### Status fields, in order of preference
 
-1. **`response.status`** — reliably populated (99.8% of rows in air-staging), but stored as a **string**.
-   A bare `WHERE response.status >= 500` silently returns **zero rows**. Always wrap it:
-   `numeric(response.status) >= 500`.
-2. **`http.statusCode`** — genuinely numeric, so it compares directly, but sparsely populated
-   (3.8% in air-staging). Use only if `response.status` is absent.
-3. **`httpResponseCode`** — legacy, absent on current agents. Do not use.
+1. **`response.status`** — the most consistently populated of the three, and the one to reach for
+   first, but stored as a **string**. A bare `WHERE response.status >= 500` silently returns
+   **zero rows**. Always wrap it: `numeric(response.status) >= 500`.
+2. **`http.statusCode`** — genuinely numeric, so it compares directly. Coverage varies and is
+   often partial, so treat it as a cross-check or a fallback rather than a primary filter.
+3. **`httpResponseCode`** — legacy. Being non-null here does not make it usable: it can be
+   populated on a large share of rows and still carry only a single value such as `200`, in which
+   case filtering on it finds no errors while looking like a valid query. Prefer the two above.
+
+**Coverage is per-account, not universal — measure it, don't assume it.** None of these three is
+populated everywhere, and their relative coverage differs between accounts and agent versions. The
+check below is the point of this section; run it before you filter.
 
 Check which one your target populates before filtering on it:
 `SELECT filter(count(*), WHERE response.status IS NOT NULL), filter(count(*), WHERE http.statusCode IS NOT NULL), count(*) FROM TransactionError WHERE entityGuid = '{guid}' SINCE 24 hours ago`
@@ -142,7 +156,7 @@ Keep `latest(timestamp)` — it is epoch ms and anchors the ±5 min time window 
 
 ## 2c. Which candidates are inspectable (step 3c)
 
-Sampling removes most candidates — 9 of 10 on two separate measurements. Settle it in one query before
+Sampling removes most candidates — commonly all but one of a shortlist. Settle it in one query before
 committing to a trace, and prefer a candidate that has spans.
 
 ```sql
@@ -204,9 +218,10 @@ LIMIT 20
 ```
 
 **Always truncate `message`.** Verified on a real trace: some log lines are full HTTP header dumps
-thousands of characters long, including `authorization: Bearer …`. Selecting raw `message` floods context
+thousands of characters long, including an `authorization` header. Selecting raw `message` floods context
 and can surface credentials into the transcript. `substring(message, 0, 500)` keeps it readable; widen only
-for a specific line you have already identified as interesting.
+for a specific line you have already identified as interesting. Note that truncation bounds context size
+rather than reliably removing secrets — a token near the start of a header dump still falls inside it.
 
 Expect apparent **duplicate rows** — the same line often appears twice (multiple log forwarders). Dedupe
 when summarizing; it is not two separate events.
@@ -225,9 +240,9 @@ LIMIT 20
 `level` casing varies by forwarder (`ERROR` vs `error`), so normalise with `lower(level)` rather than listing
 spellings.
 
-**Include `warn`/`warning`.** A handled exception logs its stack below error level — verified on a trace whose
-only levels were `warning`, `debug` and `DEBUG`, with the raising line (`raise McpAuthenticationError`) in the
-`warning` rows. An error-and-fatal-only filter returns nothing there and is indistinguishable from missing
+**Include `warn`/`warning`.** A handled exception logs its stack below error level — verified on a real trace
+that carried no `error`-level rows at all, with the raising line in the `warning` rows. An
+error-and-fatal-only filter returns nothing there and is indistinguishable from missing
 logs. If even this is empty, widen to all levels for the trace before concluding anything:
 
 ```sql
