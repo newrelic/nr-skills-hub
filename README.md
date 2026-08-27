@@ -43,7 +43,6 @@ privileges, and required scopes. Read it before enabling that skill.
 
 ```
 skills/
-├── skill-manifest.template.md    # copy this when adding a skill
 └── <skill-name>/
     ├── SKILL.md                  # the instructions the agent loads
     ├── queries.md                # NRQL reference the skill reads
