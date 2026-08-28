@@ -18,7 +18,7 @@ jobs:
       skill_dirs: ${{ steps.find.outputs.skill_dirs }}
       has_skills: ${{ steps.find.outputs.has_skills }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -72,7 +72,7 @@ jobs:
       matrix:
         skill_dir: ${{ fromJson(needs.detect.outputs.skill_dirs) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Run per-skill validation
         run: bash .github/scripts/validate_skill.sh "${{ matrix.skill_dir }}"
@@ -84,7 +84,7 @@ jobs:
     if: needs.detect.outputs.has_skills == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -131,7 +131,7 @@ jobs:
     if: needs.detect.outputs.has_skills == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Verify skills are registered with an owner
         env:
