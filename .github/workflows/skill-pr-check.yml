@@ -1,0 +1,237 @@
+name: Skill PR Validation
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  # ── Step 1: Detect which skill directories changed in this PR ──────────────
+  detect:
+    name: Detect Changed Skills
+    runs-on: ubuntu-latest
+    outputs:
+      skill_dirs: ${{ steps.find.outputs.skill_dirs }}
+      has_skills: ${{ steps.find.outputs.has_skills }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Find changed skill directories
+        id: find
+        run: |
+          CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          echo "Changed files:"
+          echo "$CHANGED"
+
+          declare -A SEEN
+          DIRS=()
+
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            d=$(dirname "$f")
+            # Walk up the directory tree looking for a SKILL.md anchor
+            while true; do
+              if [ -f "${d}/SKILL.md" ]; then
+                if [ -z "${SEEN[$d]+_}" ]; then
+                  SEEN[$d]=1
+                  DIRS+=("$d")
+                fi
+                break
+              fi
+              parent=$(dirname "$d")
+              [ "$parent" = "$d" ] && break  # filesystem root
+              d="$parent"
+            done
+          done <<< "$CHANGED"
+
+          if [ ${#DIRS[@]} -eq 0 ]; then
+            echo "No skill directories found in changed files."
+            echo "has_skills=false" >> "$GITHUB_OUTPUT"
+            echo "skill_dirs=[]" >> "$GITHUB_OUTPUT"
+          else
+            DIRS_JSON=$(printf '%s\n' "${DIRS[@]}" | jq -R . | jq -sc .)
+            echo "has_skills=true" >> "$GITHUB_OUTPUT"
+            echo "skill_dirs=$DIRS_JSON" >> "$GITHUB_OUTPUT"
+            echo "Found: $DIRS_JSON"
+          fi
+
+  # ── Step 2: Structural & content checks per skill dir (parallel) ──────────
+  validate:
+    name: Validate — ${{ matrix.skill_dir }}
+    needs: detect
+    if: needs.detect.outputs.has_skills == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        skill_dir: ${{ fromJson(needs.detect.outputs.skill_dirs) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run per-skill validation
+        run: bash .github/scripts/validate_skill.sh "${{ matrix.skill_dir }}"
+
+  # ── Step 3: Secret scanning + dangerous execution pattern detection ────────
+  secret-scan:
+    name: Secret & Security Scan
+    needs: detect
+    if: needs.detect.outputs.has_skills == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan for secrets (TruffleHog)
+        uses: trufflesecurity/trufflehog@v3
+        with:
+          path: ./
+          base: origin/${{ github.base_ref }}
+          head: HEAD
+          extra_args: --only-verified
+
+      - name: Check for dangerous execution patterns
+        env:
+          SKILL_DIRS: ${{ needs.detect.outputs.skill_dirs }}
+        run: |
+          FAILED=0
+          while IFS= read -r dir; do
+            echo "--- Scanning $dir ---"
+
+            # curl|bash / wget|sh — arbitrary remote code execution
+            if grep -rniE '(curl|wget)[^`\n]*\|[[:space:]]*(ba)?sh' "$dir/"; then
+              echo "::error::Dangerous shell pipe pattern (curl/wget | bash/sh) in $dir"
+              FAILED=1
+            fi
+
+            # pip/npm install from external (non-registry) URLs
+            if grep -rniE 'pip install[[:space:]]+https?://' "$dir/"; then
+              echo "::error::pip install from external URL detected in $dir — only PyPI is allowed"
+              FAILED=1
+            fi
+            if grep -rniE 'npm install[[:space:]]+https?://' "$dir/"; then
+              echo "::error::npm install from external URL detected in $dir — only npmjs.com registry is allowed"
+              FAILED=1
+            fi
+
+            echo "✓ $dir — clean"
+          done < <(echo "$SKILL_DIRS" | jq -r '.[]')
+          exit $FAILED
+
+  # ── Step 4: Verify REGISTRY.md has an entry for every changed skill ───────
+  registry:
+    name: Registry & Ownership Check
+    needs: detect
+    if: needs.detect.outputs.has_skills == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify skills are registered with an owner
+        env:
+          SKILL_DIRS: ${{ needs.detect.outputs.skill_dirs }}
+        run: |
+          if [ ! -f "REGISTRY.md" ]; then
+            echo "::error::REGISTRY.md not found at repository root. Create it and register every skill with an owner team."
+            exit 1
+          fi
+
+          FAILED=0
+          while IFS= read -r dir; do
+            SKILL_MD="$dir/SKILL.md"
+            NAME=$(grep "^name:" "$SKILL_MD" 2>/dev/null | head -1 | sed 's/^name:[[:space:]]*//')
+
+            if [ -z "$NAME" ]; then
+              echo "::warning file=$SKILL_MD::Could not extract 'name:' field — skipping registry check"
+              continue
+            fi
+
+            if ! grep -qF "$NAME" REGISTRY.md; then
+              echo "::error file=$SKILL_MD::Skill '$NAME' is not registered in REGISTRY.md. Add an entry with an assigned owner team."
+              FAILED=1
+            else
+              echo "✓ '$NAME' is registered"
+            fi
+          done < <(echo "$SKILL_DIRS" | jq -r '.[]')
+          exit $FAILED
+
+  # ── Step 5: Post full EPD checklist as a PR comment ──────────────────────
+  checklist:
+    name: Post PR Checklist
+    needs: [detect, validate, secret-scan, registry]
+    if: always() && needs.detect.outputs.has_skills == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build and post checklist comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SKILL_DIRS: ${{ needs.detect.outputs.skill_dirs }}
+          VALIDATE_RESULT: ${{ needs.validate.result }}
+          SECRET_RESULT: ${{ needs.secret-scan.result }}
+          REGISTRY_RESULT: ${{ needs.registry.result }}
+        run: |
+          icon() {
+            case "$1" in
+              success) printf "✅ Pass" ;;
+              failure) printf "❌ Fail" ;;
+              skipped) printf "⏭️ Skipped" ;;
+              *)       printf "⚠️ Unknown" ;;
+            esac
+          }
+
+          DIRS=$(echo "$SKILL_DIRS" | jq -r 'join(", ")')
+          V=$(icon "$VALIDATE_RESULT")
+          S=$(icon "$SECRET_RESULT")
+          R=$(icon "$REGISTRY_RESULT")
+
+          cat > /tmp/checklist.md << EOF
+          ## EPD Skill Publishing Checklist
+
+          **Skills in this PR:** \`${DIRS}\`
+
+          ### Automated Checks
+
+          | Check | Status |
+          |-------|--------|
+          | SKILL.md frontmatter (\`name\`, \`description\`) | $V |
+          | Apache 2.0 LICENSE present | $V |
+          | Eval suite (\`evals/test_cases.json\`) | $V |
+          | No internal references (source.datanerd.us etc.) | $V |
+          | No dangerous download patterns (curl|bash, wget|sh) | $S |
+          | No hardcoded secrets or credentials | $S |
+          | REGISTRY.md entry with owner team | $R |
+
+          ### Manual Review Required (Human Sign-off)
+
+          Before merging, a reviewer must confirm each item below:
+
+          - [ ] OAuth 2.0 scopes are explicitly documented and minimally scoped to the required MCP tools
+          - [ ] Skill tested **in isolation** — trigger accuracy cases pass, negative controls do not trigger
+          - [ ] Skill tested **alongside existing skills** — no false-positive coexistence or context degradation
+          - [ ] \`evals/eval_results.md\` includes model name, version, and test date
+          - [ ] No proprietary, confidential, or competitively sensitive New Relic information
+          - [ ] All state-changing MCP tool calls (DELETE, UPDATE) require explicit HITL confirmation
+          - [ ] SLC approval obtained for target publication channel / marketplace
+          - [ ] Security Engineering sign-off received
+          - [ ] Product lead sign-off received
+
+          > **Note:** Skill instructions are prompts to a language model, not a security boundary.
+          > All access controls must be enforced by MCP Server OAuth 2.0 scopes and the customer's runtime sandbox.
+          EOF
+
+          PR="${{ github.event.pull_request.number }}"
+          REPO="${{ github.repository }}"
+
+          # Delete previous checklist comment to avoid duplicates on re-push
+          OLD=$(gh api "repos/$REPO/issues/$PR/comments" \
+            --jq '.[] | select(.user.login == "github-actions[bot]") | select(.body | ltrimstr("\n") | startswith("## EPD Skill Publishing")) | .id' \
+            2>/dev/null | head -1)
+          [ -n "$OLD" ] && gh api -X DELETE "repos/$REPO/issues/comments/$OLD" || true
+
+          gh pr comment "$PR" --body-file /tmp/checklist.md
