@@ -25,8 +25,8 @@
   `evals/test_cases.json`.
 - **Not yet scored**: end-to-end workflow execution — the trigger cases' `must` clauses describe
   full runs and were not exercised. Non-Anthropic model families are unverified.
-- **Tool dependency**: step 4 needs `get_trace_summary` and `get_trace_entity_details`, which are
-  being made public. See the availability note under Privilege & actions below.
+- **Tool dependency**: step 4 needs `get_distributed_trace_details`, which is being made public.
+  See the availability note under Privilege & actions below.
 
 Model behaviour drifts between versions, so these results are valid for the models and date above
 only. Re-run `evals/` when the upstream model version changes, or when a New Relic agent or MCP tool
@@ -89,7 +89,7 @@ them, since they are embedded in the evidence it exists to read.
   - `get_entity` — read-only; resolves the target to one APM `APPLICATION` entity.
   - `convert_time_period_to_epoch_ms` — read-only; converts a described time window to epoch bounds.
   - `execute_nrql_query` — read-only; the primary data path. Ranks error groups by impact (step 3a), fetches candidate traces for the chosen error (step 3b), and runs the sampling check that decides which candidates are inspectable (step 3c). Query templates ship in `queries.md`.
-  - `get_trace_summary`, `get_trace_entity_details` — read-only; resolve a whole distributed trace across accounts, returning per-service self-time, the call graph and error spans.
+  - `get_distributed_trace_details` — read-only; resolve a whole distributed trace across accounts, returning per-service self-time, the call graph and error spans.
   - `analyze_entity_logs` — read-only; correlates logs around the error.
 
   Every tool is read-only. `AskUserQuestion` is used to put entity and error-group choices to the
@@ -98,15 +98,15 @@ them, since they are embedded in the evidence it exists to read.
 
   **Availability — audited 2026-08-26.** Four of the tools above are tagged `public` + `ga` and are
   reachable by a customer: `get_entity`, `convert_time_period_to_epoch_ms`, `execute_nrql_query`
-  and `analyze_entity_logs`. The two step-4 trace tools — `get_trace_summary` and
-  `get_trace_entity_details` — carried `internal` + `ga` at the time of the audit and **are being
-  promoted to `public`**. The server disables `internal`-tagged tools in production, so until that
-  promotion ships they are not reachable there.
+  and `analyze_entity_logs`. The step-4 trace tool — `get_distributed_trace_details` — carried
+  `internal` + `ga` at the time of the audit and **is being promoted to `public`**. The server
+  disables `internal`-tagged tools in production, so until that promotion ships it is not reachable
+  there.
 
   Steps 3a–3c deliberately use `execute_nrql_query` rather than the typed error tools, so the
   error-ranking path carries no availability dependency at all. Step 4 is the only affected step,
   and it does not degrade: the skill's central finding is that a single-account NRQL query cannot
-  resolve a distributed trace and that no rewrite fixes it. **Confirm both trace tools are `public`
+  resolve a distributed trace and that no rewrite fixes it. **Confirm the trace tool is `public`
   on the production tool surface before publishing** — that is the one outstanding item. See
   `evals/eval_results.md`.
 
