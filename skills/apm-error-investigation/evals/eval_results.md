@@ -20,7 +20,7 @@ agent or MCP tool release could move the attribute-coverage figures below.
 the tool registrations and the server's tag-exclusion path: tools tagged `internal` are disabled
 when the server runs in a production environment.
 
-The two step-4 trace tools are **being promoted to `public`**, which resolves this. The table below
+The step-4 trace tool is **being promoted to `public`**, which resolves this. The table below
 records the tags as they stood on the audit date, so a later reader can tell whether the promotion
 has landed rather than assuming it has.
 
@@ -30,8 +30,7 @@ has landed rather than assuming it has.
 | `convert_time_period_to_epoch_ms` | 2 | `public`, `ga` | Yes |
 | `execute_nrql_query` | 3a, 3b, 3c | `public`, `ga` | Yes |
 | `analyze_entity_logs` | 5 | `public`, `ga` | Yes |
-| `get_trace_summary` | 4 | `internal`, `ga` — promotion to `public` in flight | Not yet, at audit date |
-| `get_trace_entity_details` | 4 | `internal`, `ga` — promotion to `public` in flight | Not yet, at audit date |
+| `get_distributed_trace_details` | 4 | `internal`, `ga` — promotion to `public` in flight | Not yet, at audit date |
 
 Steps 3a–3c use `execute_nrql_query` rather than the typed `analyze_errors` / `search_errors`
 tools, both of which are `internal`-gated. That removes the error-ranking path from the blocker
@@ -39,11 +38,11 @@ entirely — see [the NRQL path](#executed-the-nrql-path-for-steps-3a3b) for its
 
 **Why step 4 is the one that matters.** It does not degrade. The skill's most emphatic gotcha is
 that a single-account NRQL query cannot reconstruct a distributed trace and that no rewrite fixes
-it — so while the trace tools are unreachable, a customer has no path through that step and would
+it — so while the trace tool is unreachable, a customer has no path through that step and would
 land exactly in the failure mode the skill warns about, while believing they had followed it. That
 is why the promotion is the gate rather than a fallback being written.
 
-**Pre-publish check:** confirm both trace tools are tagged `public` on the production tool surface.
+**Pre-publish check:** confirm the trace tool is tagged `public` on the production tool surface.
 Nothing else is outstanding, and `nl2-nrql` and `discover-trace` are unaffected — they depend only
 on tools that were already `public` + `ga`.
 

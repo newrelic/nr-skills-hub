@@ -21,7 +21,7 @@ Kubernetes errors unless the user narrows to an APM app.
 | 3a — rank errors by impact | `execute_nrql_query` | `queries.md` §1 |
 | 3b — candidate traces for the chosen error | `execute_nrql_query` | `queries.md` §2 |
 | 3c — which candidates are inspectable | `execute_nrql_query` | `queries.md` §2c |
-| 4 — reconstruct the trace | `get_trace_summary`, `get_trace_entity_details` | |
+| 4 — reconstruct the trace | `get_distributed_trace_details` | |
 | 5 — correlate logs | `analyze_entity_logs` | `queries.md` §4 |
 
 Every one is read-only. Put decisions to the user with `AskUserQuestion`, not a prose list. Do not call
