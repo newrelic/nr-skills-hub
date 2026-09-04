@@ -9,7 +9,7 @@
   - **version**: `1.0.0`
   - **description**: Root-causes a backend APM application error end to end — resolves the entity, ranks error groups by impact, follows the chosen trace, and correlates logs into an evidence-backed report.
 - **author**
-  - **verified_identity**: `TODO — New Relic verified publisher id, pending EPD/SLC`
+  - **verified_identity**: `New Relic`
 
 ## Provenance and testing
 

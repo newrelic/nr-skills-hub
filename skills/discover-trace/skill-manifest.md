@@ -9,7 +9,7 @@
   - **version**: `1.0.0`
   - **description**: Finds distributed trace IDs in New Relic telemetry via NRQL and presents every match for the user to choose from.
 - **author**
-  - **verified_identity**: `TODO — New Relic verified publisher id, pending EPD/SLC`
+  - **verified_identity**: `New Relic`
 
 ## Provenance and testing
 
