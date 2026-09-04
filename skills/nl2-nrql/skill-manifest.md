@@ -9,7 +9,7 @@
   - **version**: `1.0.0`
   - **description**: Turns a plain-English question about New Relic data into one schema-validated NRQL query, discovering the account's real event types and attributes before generating it.
 - **author**
-  - **verified_identity**: `TODO — New Relic verified publisher id, pending EPD/SLC`
+  - **verified_identity**: `New Relic`
 
 ## Provenance and testing
 
