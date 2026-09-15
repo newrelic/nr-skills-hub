@@ -25,8 +25,8 @@
   `evals/test_cases.json`.
 - **Not yet scored**: end-to-end workflow execution — the trigger cases' `must` clauses describe
   full runs and were not exercised. Non-Anthropic model families are unverified.
-- **Tool dependency**: step 4 needs `get_distributed_trace_details`, which is being made public.
-  See the availability note under Privilege & actions below.
+- **Tool dependency**: step 4 needs `get_distributed_trace_details`. Confirm it is generally
+  available on the production MCP server — see the availability note under Privilege & actions.
 
 Model behaviour drifts between versions, so these results are valid for the models and date above
 only. Re-run `evals/` when the upstream model version changes, or when a New Relic agent or MCP tool
@@ -96,19 +96,18 @@ them, since they are embedded in the evidence it exists to read.
   user. The skill explicitly does **not** call `generate_alert_insights_report`, and does not use
   `search_traces`.
 
-  **Availability — audited 2026-08-26.** Four of the tools above are tagged `public` + `ga` and are
-  reachable by a customer: `get_entity`, `convert_time_period_to_epoch_ms`, `execute_nrql_query`
-  and `analyze_entity_logs`. The step-4 trace tool — `get_distributed_trace_details` — carried
-  `internal` + `ga` at the time of the audit and **is being promoted to `public`**. The server
-  disables `internal`-tagged tools in production, so until that promotion ships it is not reachable
-  there.
+  **Availability — audited 2026-08-26.** Four of the tools above were generally available to a
+  customer: `get_entity`, `convert_time_period_to_epoch_ms`, `execute_nrql_query` and
+  `analyze_entity_logs`. The step-4 trace tool — `get_distributed_trace_details` — was **not yet
+  generally available** on the production MCP server at the time of the audit. Confirm that it is
+  before relying on step 4.
 
   Steps 3a–3c deliberately use `execute_nrql_query` rather than the typed error tools, so the
   error-ranking path carries no availability dependency at all. Step 4 is the only affected step,
   and it does not degrade: the skill's central finding is that a single-account NRQL query cannot
-  resolve a distributed trace and that no rewrite fixes it. **Confirm the trace tool is `public`
-  on the production tool surface before publishing** — that is the one outstanding item. See
-  `evals/eval_results.md`.
+  resolve a distributed trace and that no rewrite fixes it. **Confirm the trace tool is generally
+  available on the production MCP server before publishing** — that is the one outstanding item.
+  See `evals/eval_results.md`.
 
   **Privilege note on the NRQL path.** `execute_nrql_query` takes a query string rather than typed
   parameters, so it is broader than the typed tools it replaces: within `observability:read` it can

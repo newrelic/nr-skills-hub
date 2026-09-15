@@ -13,18 +13,17 @@
 
 ## Tool availability
 
-All three tools this skill depends on are tagged `public` and `ga`, so they are reachable by a
-customer in production. Verified by reading the tool registrations and the server's
-tag-exclusion path.
+All three tools this skill depends on are generally available, so they are reachable by a
+customer in production.
 
-| Tool | Tags | Reachable in production |
-|---|---|---|
-| `execute_nrql_query` | `public`, `ga` | Yes |
-| `list_available_new_relic_accounts` | `public`, `ga` | Yes |
-| `convert_time_period_to_epoch_ms` | `public`, `ga` | Yes |
+| Tool | Available in production |
+|---|---|
+| `execute_nrql_query` | Yes |
+| `list_available_new_relic_accounts` | Yes |
+| `convert_time_period_to_epoch_ms` | Yes |
 
 **No availability blocker for this skill.** Unlike `apm-error-investigation`, nothing here
-depends on an `internal`-gated tool.
+depends on a tool that is not yet generally available.
 
 ## Executed: live verification of documented claims
 
