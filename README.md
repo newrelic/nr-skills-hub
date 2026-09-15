@@ -20,10 +20,10 @@ hands off; `apm-error-investigation` runs the full investigation. Pick the one w
 point matches what you want.
 
 > [!NOTE]
-> `apm-error-investigation` needs two trace tools that are in the process of being made public. If
-> its trace-reconstruction step reports the tools as unavailable, that promotion has not reached
-> your environment yet — the step has no NRQL fallback by design. Everything up to it works
-> regardless. See [`REGISTRY.md`](REGISTRY.md).
+> `apm-error-investigation` needs a trace tool that may not be available in every environment yet.
+> If its trace-reconstruction step reports the tool as unavailable, it has not reached your
+> environment — the step has no NRQL fallback by design. Everything up to it works regardless.
+> See [its manifest](skills/apm-error-investigation/skill-manifest.md).
 
 ## Before you enable any of this
 
@@ -81,13 +81,13 @@ MCP tool release could move the attribute-coverage figures the skill depends on.
 skills encode facts like "this attribute is populated on most rows but this one is not" — those
 are measurements, and they go stale.
 
-Ownership, the bar for adding a skill, and the deprecation policy are in
-[`REGISTRY.md`](REGISTRY.md).
+Ownership and the deprecation policy are in [`REGISTRY.md`](REGISTRY.md); the bar for adding a
+skill is in [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Contributing
 
 New skills need approval for the publication venue before merge, and must meet the checklist in
-[`REGISTRY.md`](REGISTRY.md#adding-a-skill).
+[`CONTRIBUTING.md`](CONTRIBUTING.md#adding-a-skill).
 
 ## License
 

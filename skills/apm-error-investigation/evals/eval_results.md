@@ -16,35 +16,30 @@ agent or MCP tool release could move the attribute-coverage figures below.
 
 ## Tool availability — one item to confirm before publishing
 
-**Everything except step 4 is clear, and step 4's dependency is in flight.** Verified by reading
-the tool registrations and the server's tag-exclusion path: tools tagged `internal` are disabled
-when the server runs in a production environment.
+**Everything except step 4 is clear.** The table records availability as it stood on the audit
+date, so a later reader can confirm the step-4 dependency rather than assuming it.
 
-The step-4 trace tool is **being promoted to `public`**, which resolves this. The table below
-records the tags as they stood on the audit date, so a later reader can tell whether the promotion
-has landed rather than assuming it has.
-
-| Tool | Step | Tags | Reachable by a customer in production |
-|---|---|---|---|
-| `get_entity` | 0/1 | `public`, `ga` | Yes |
-| `convert_time_period_to_epoch_ms` | 2 | `public`, `ga` | Yes |
-| `execute_nrql_query` | 3a, 3b, 3c | `public`, `ga` | Yes |
-| `analyze_entity_logs` | 5 | `public`, `ga` | Yes |
-| `get_distributed_trace_details` | 4 | `internal`, `ga` — promotion to `public` in flight | Not yet, at audit date |
+| Tool | Step | Available to a customer in production |
+|---|---|---|
+| `get_entity` | 0/1 | Yes |
+| `convert_time_period_to_epoch_ms` | 2 | Yes |
+| `execute_nrql_query` | 3a, 3b, 3c | Yes |
+| `analyze_entity_logs` | 5 | Yes |
+| `get_distributed_trace_details` | 4 | Not yet, at audit date |
 
 Steps 3a–3c use `execute_nrql_query` rather than the typed `analyze_errors` / `search_errors`
-tools, both of which are `internal`-gated. That removes the error-ranking path from the blocker
+tools, which were not generally available. That removes the error-ranking path from the blocker
 entirely — see [the NRQL path](#executed-the-nrql-path-for-steps-3a3b) for its live verification.
 
 **Why step 4 is the one that matters.** It does not degrade. The skill's most emphatic gotcha is
 that a single-account NRQL query cannot reconstruct a distributed trace and that no rewrite fixes
 it — so while the trace tool is unreachable, a customer has no path through that step and would
 land exactly in the failure mode the skill warns about, while believing they had followed it. That
-is why the promotion is the gate rather than a fallback being written.
+is why availability is the gate rather than a fallback being written.
 
-**Pre-publish check:** confirm the trace tool is tagged `public` on the production tool surface.
+**Pre-publish check:** confirm the trace tool is generally available on the production MCP server.
 Nothing else is outstanding, and `nl2-nrql` and `discover-trace` are unaffected — they depend only
-on tools that were already `public` + `ga`.
+on tools that were already generally available.
 
 ## Executed: the NRQL path for steps 3a/3b
 
@@ -149,8 +144,9 @@ Two limitations, stated so the score is not over-read:
   sees one message at a time, so batching could in principle create contrast effects. The negative
   controls are the load-bearing half of the result and they were all rejected correctly, which is
   the harder direction.
-- Cross-family testing is **incomplete**. `gpt-4o` and `gpt-4o-mini` both returned errors from the
-  gateway, so no non-Anthropic model was scored. Behaviour on other model families is unverified.
+- Cross-family testing is **incomplete**. `gpt-4o` and `gpt-4o-mini` were not reachable in the test
+  environment, so no non-Anthropic model was scored. Behaviour on other model families is
+  unverified.
 
 ## Executed: routing accuracy — 31/32 across two models
 
@@ -239,7 +235,7 @@ investigation. Pushing back on an explicit user request is the intended behaviou
 ### Methodological finding: `claude-haiku-4-5` decodes deterministically here
 
 Three separate calls with an identical prompt returned **byte-identical** output. `claude-sonnet-4-6`
-returned visibly different phrasing across its trials on the same prompt. So on this gateway, repeat
+returned visibly different phrasing across its trials on the same prompt. So in this setup, repeat
 trials against Haiku are the *same sample repeated*, not independent draws.
 
 **Consequence:** a pass *rate* can only be reported for Sonnet. For Haiku the result is a
@@ -290,7 +286,7 @@ adversarial behaviour are scored; workflow execution against live telemetry is n
 `edge-01` (entity ambiguity via `AskUserQuestion`), `edge-02` (sampling gap) and `edge-05` (log
 levels below `error`) were routing-scored only.
 
-Step 4 end-to-end remains gated on the trace-tool promotion described above.
+Step 4 end-to-end remains gated on trace-tool availability described above.
 
 **What this suite does not yet do.** There is no runner — re-running it is manual, which sits badly
 against the requirement to re-run whenever an upstream model version ships. That is the main gap

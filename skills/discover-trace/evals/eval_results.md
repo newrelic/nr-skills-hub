@@ -13,13 +13,13 @@
 
 ## Tool availability
 
-Both tools this skill depends on are tagged `public` and `ga`, so they are reachable by a
+Both tools this skill depends on are generally available, so they are reachable by a
 customer in production.
 
-| Tool | Tags | Reachable in production |
-|---|---|---|
-| `execute_nrql_query` | `public`, `ga` | Yes |
-| `list_available_new_relic_accounts` | `public`, `ga` | Yes |
+| Tool | Available in production |
+|---|---|
+| `execute_nrql_query` | Yes |
+| `list_available_new_relic_accounts` | Yes |
 
 **No availability blocker for this skill.**
 
