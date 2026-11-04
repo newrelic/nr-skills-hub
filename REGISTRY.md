@@ -11,6 +11,9 @@ unmaintained, expands customer attack surface for no benefit — see
 | [`nl2-nrql`](skills/nl2-nrql/) | 1.0.0 | AIR team | `observability:read` | 2026-08-26 |
 | [`discover-trace`](skills/discover-trace/) | 1.0.0 | AIR team | `observability:read` | 2026-08-26 |
 | [`apm-error-investigation`](skills/apm-error-investigation/) | 1.0.0 | AIR team | `observability:read` | 2026-08-26 |
+| [`apm`](skills/apm/) | 1.0.0 | AIR team | `observability:read` | Not yet tested |
+| [`finops`](skills/finops/) | 1.0.0 | AIR team | `observability:read` | Not yet tested |
+| [`kubernetes`](skills/kubernetes/) | 1.0.0 | AIR team | `observability:read` | Not yet tested |
 
 Owners are teams, not individuals, so an entry survives staffing changes. Report issues through
 the routes in [`SECURITY.md`](SECURITY.md).
@@ -19,6 +22,8 @@ Test provenance — models, versions, results and known gaps — lives in each s
 `skill-manifest.md` and `evals/eval_results.md`, so there is a single copy that cannot drift from
 this file. `apm-error-investigation` has one outstanding pre-publish check, recorded in
 [its manifest](skills/apm-error-investigation/skill-manifest.md).
+`apm`, `finops` and `kubernetes` have no recorded test run yet; each manifest lists the items
+to resolve before they are published.
 
 ## Ownership expectations
 
