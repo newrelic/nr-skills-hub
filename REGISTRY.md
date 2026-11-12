@@ -11,6 +11,7 @@ unmaintained, expands customer attack surface for no benefit — see
 | [`nl2-nrql`](skills/nl2-nrql/) | 1.0.0 | AIR team | `observability:read` | 2026-08-26 |
 | [`discover-trace`](skills/discover-trace/) | 1.0.0 | AIR team | `observability:read` | 2026-08-26 |
 | [`apm-error-investigation`](skills/apm-error-investigation/) | 1.0.0 | AIR team | `observability:read` | 2026-08-26 |
+| [`kafka`](skills/kafka/) | 0.1.1 | OHAI team | `observability:read` | 2026-11-12 (trigger accuracy and canned-result behaviour) |
 
 Owners are teams, not individuals, so an entry survives staffing changes. Report issues through
 the routes in [`SECURITY.md`](SECURITY.md).
