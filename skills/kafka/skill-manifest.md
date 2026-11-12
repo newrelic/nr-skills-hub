@@ -15,11 +15,11 @@
 
 - **Skill version**: `0.1.1`
 - **License**: Apache 2.0 (`LICENSE`, in this directory)
-- **Last tested**: 2026-11-12: trigger accuracy in Claude Code 2.1.311 with `claude-sonnet-5-5`, 66 of 66 over two runs of 33 cases with the other four skills installed (`evals/eval_results.md`). Before that, 2026-10-21: routing accuracy on 33 cases, plus behaviour on 5 of them with canned tool results.
+- **Last tested**: 2026-11-12: trigger accuracy in Claude Code 2.1.311 with `claude-sonnet-5-5`, 66 of 66 over two runs of 33 cases with the hub's other three skills and a general investigation skill installed (`evals/eval_results.md`). Before that, 2026-10-21: routing accuracy on 33 cases, plus behaviour on 5 of them with canned tool results.
 - **Models used**: Claude Haiku and Claude Sonnet (run as sub-agents of Claude Code with the `haiku` and `sonnet` aliases; the exact version is not recorded by the harness). The 2026-11-12 trigger run used `claude-sonnet-5-5` through `claude -p`.
 - **Results**: trigger 66 of 66 on 2026-11-12 (62 of 66 for 0.1.0); routing 32 of 33 per model, with the two models agreeing on every Kafka-or-not decision; behaviour on canned results 5 of 5 for Sonnet and 4 of 5 for Haiku (one partial, since corrected in `queries.md`). Details and known gaps in `evals/eval_results.md`.
 - **NRQL checked**: the NRQL in `queries.md` was executed on 2026-10-14 against live telemetry for each provider it covers (OpenTelemetry, nri-kafka, AWS MSK stream and polled, Confluent Cloud, APM agent), except the parts listed here, which have not been executed: the one-day lookback on last-report reads, the per-partition grain for nri-kafka lag, the `direction` split on `kafka.topic.io`, the account-wide counts, and the "Trends and capacity", "Log searches" and "Hosts, containers and Kubernetes" sections.
-- **Not yet scored**: any run against live telemetry. No run has used `analyze_kafka_health`, `analyze_kafka_related_entities` or `analyze_kafka_client_metrics` against a real account, so the shape of their output as the skill reads it is unverified. The log tools were checked once on a test account: both returned no rows for an infrastructure-agent host's logs that NRQL on `entity.guids` finds (`evals/eval_results.md`).
+- **Not yet scored**: any run against live telemetry. No run has used `analyze_kafka_related_entities` or `analyze_kafka_client_metrics` against a real account, so the shape of their output as the skill reads it is unverified. `analyze_kafka_health` and the log queries were each checked once on a test account (`evals/eval_results.md`).
 
 Model behaviour drifts between versions, so any results recorded here are valid for the models and date given only. Re-run `evals/` when the upstream model version changes, or when a New Relic agent or MCP tool release could change the metric names and attributes this skill queries.
 
@@ -41,7 +41,6 @@ Model behaviour drifts between versions, so any results recorded here are valid 
 - **handles_sensitive_data**: `true`
 - **data_categories**:
   - `pii`
-  - `credentials`
   - `confidential`
 - **data_egress**: New Relic MCP server (NerdGraph) over HTTPS. It is the only destination the skill sends to, and the skill reaches it only through the MCP client's existing authenticated connection. Query results additionally enter the agent's model context, so the customer's configured LLM inference provider receives them.
 - **third_party_subprocessors**:
