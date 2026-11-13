@@ -1,23 +1,22 @@
 # eval_results: kafka
 
-## Test environment
+## Runs
 
-| Field | Value |
-|---|---|
-| Model | Claude Haiku and Claude Sonnet, run as Claude Code sub-agents with the `haiku` and `sonnet` aliases. The harness does not report the exact model version. |
-| Harness | Claude Code sub-agents. Routing runs see only the skill descriptions. Behaviour runs read the skill files and answer from canned tool results. No live New Relic MCP server was reachable. |
-| Date of this run | 2026-10-21 |
-| Skill version under test | 0.1.0 |
-| Accounts used | None. The behaviour cases use the fixture account ID 1234567; no real account or telemetry was queried. |
-| Scope of this run | Routing accuracy on all 33 cases, behaviour on 5 cases with canned tool results, a sanitization check, and the hub validator. Live tool calls and live NRQL are **not** covered; see [Still not scored](#still-not-scored-live-execution). |
+Newest first. Each run's method is in its section below.
 
-The 2026-11-12 and 2026-11-13 trigger runs below have their own method and environment in their sections.
+| Date | Version | Model | Harness | Scope | Result |
+|---|---|---|---|---|---|
+| 2026-11-13 | 0.1.2 | `claude-sonnet-5-5` | `claude -p` (Claude Code 2.1.311), this repository's skills plus a general investigation skill, only `Skill` and `Read` allowed, no MCP server | Trigger accuracy, 35 cases, two runs each | 70 of 70 |
+| 2026-11-12 | 0.1.0, 0.1.1 | `claude-sonnet-5-5` | as above | Trigger accuracy, 33 cases, two runs each | 62 of 66 (0.1.0), 66 of 66 (0.1.1) |
+| 2026-10-21 | 0.1.0 | Claude Haiku and Claude Sonnet (Claude Code sub-agent aliases; exact version not reported) | Claude Code sub-agents: routing sees only the skill descriptions; behaviour reads the skill files and answers from canned tool results | Routing on 33 cases, behaviour on 5, sanitization check, hub validator | Routing 32 of 33 per model; behaviour 5 of 5 (Sonnet), 4 of 5 (Haiku) |
 
-Re-run this suite whenever the upstream model version changes, and whenever a New Relic agent or MCP tool release could change the Kafka tools' concepts or the metric and attribute names in `queries.md`.
+The scored runs used no real account or telemetry; the behaviour cases use the fixture account ID 1234567. The only live checks are one log-scoping query and one `analyze_kafka_health` sweep on a test account (2026-11-13 section); the rest of live execution is under [Still not scored](#still-not-scored-live-execution).
+
+Re-run this suite whenever the upstream model version changes, and whenever a New Relic agent or MCP tool release could change the Kafka tools' concepts or the metric and attribute names in `references/queries.md`.
 
 ## Tool availability
 
-Source: the New Relic MCP server's tool documentation, read on 2026-10-21, and the audit of 2026-08-26 in `../../apm-error-investigation/evals/eval_results.md`.
+Source: the New Relic MCP server's tool tags, checked on 2026-11-13, and the audit of 2026-08-26 in `../../apm-error-investigation/evals/eval_results.md`.
 
 | Tool | Used for | In production |
 |---|---|---|
