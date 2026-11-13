@@ -11,7 +11,7 @@
 | Accounts used | None. The behaviour cases use the fixture account ID 1234567; no real account or telemetry was queried. |
 | Scope of this run | Routing accuracy on all 33 cases, behaviour on 5 cases with canned tool results, a sanitization check, and the hub validator. Live tool calls and live NRQL are **not** covered; see [Still not scored](#still-not-scored-live-execution). |
 
-The 2026-11-12 trigger run below has its own method and environment in its section.
+The 2026-11-12 and 2026-11-13 trigger runs below have their own method and environment in their sections.
 
 Re-run this suite whenever the upstream model version changes, and whenever a New Relic agent or MCP tool release could change the Kafka tools' concepts or the metric and attribute names in `queries.md`.
 
@@ -26,12 +26,12 @@ Source: the New Relic MCP server's tool documentation, read on 2026-10-21, and t
 | `list_available_new_relic_accounts` | account lookup, only if the user cannot name it | Public |
 | `get_entity` | resolving a name to an entity GUID and account | Public |
 | `analyze_entity_logs` | logs around the onset | Public |
-| `list_recent_logs` | the log lines in time order | Public per the tool's tags on 2026-11-05; confirm against the published tool list before merging |
+| `list_recent_logs` | the log lines in time order | Public |
 | `analyze_kafka_health` | the health sweep | Public |
 | `analyze_kafka_related_entities` | brokers, topics, applications and hosts around an entity | Public |
 | `analyze_kafka_client_metrics` | an application's own client metrics | Public |
 
-The three Kafka tools carry the server's `preview` tag, so their parameters and response shape can change between releases. Re-run this suite after a Kafka tool release. If the server does not offer `analyze_kafka_client_metrics`, the skill uses the "Client applications" queries instead.
+The three Kafka tools are public. The server may not offer them in every account; the skill then uses the queries in `references/queries.md` ("When a Kafka tool is not offered" in `SKILL.md`). Re-run this suite after a Kafka tool release.
 
 ## Executed: sanitization check
 
@@ -75,15 +75,29 @@ Method: `claude -p` (Claude Code 2.1.311, `claude-sonnet-5-5`) in an empty proje
 - 0.1.1 also links the two references with the condition for reading each and puts a contents line at the top of both.
 - Not scored here: anything after the first reference read.
 
-## Changed since the 2026-11-12 run (not re-run)
+## Executed: trigger accuracy after the review changes, 70 of 70 (2026-11-13)
 
+Method: as on 2026-11-12 (`claude -p`, Claude Code 2.1.311, `claude-sonnet-5-5`, the same five skills, two runs per case, two turns, only `Skill` and `Read` allowed, no MCP server), on version 0.1.2: the text in this commit, with `queries.md` and `failure-modes.md` under `references/`. All 35 cases, including `edge-08` and `edge-09`.
+
+| Category | 0.1.2 |
+|---|---|
+| Trigger accuracy | 32 of 32 |
+| Negative controls | 14 of 14 |
+| Edge cases | 18 of 18 |
+| Coexistence | 6 of 6 |
+| **Total** | **70 of 70** |
+| Runs that read a file under `references/` right after loading `kafka` (shows the links resolve from the new folder, not that the right file was chosen) | 42 of 54 |
+
+What 0.1.2 changes from the 0.1.1 text scored on 2026-11-12:
+
+- **Layout.** `queries.md` and `failure-modes.md` moved to `references/`; `SKILL.md` links them there.
+- **A Kafka tool not offered.** `SKILL.md` gives a `references/queries.md` fallback for each of the three `analyze_kafka_*` tools, which the server may not offer in every account.
 - **Description quoted.** The frontmatter `description` held `: ` inside an unquoted YAML value, which GitHub rejects ("mapping values are not allowed in this context") and `yaml.safe_load` refuses; Claude Code loaded it in the run above. The text is unchanged and now double-quoted, so the routing results above still describe it.
 - **Reach.** `SKILL.md` states that the health and related-entities tools map 3 hops from the seed, gives health questions their own row, and says to check the reach and, for a missing layer that matters, sweep once from the mapped neighbour as a second seed. A consumer group has no entity, so a group question is seeded from its consuming application, topic or cluster. New case `edge-08`; `trigger-10` gained one `must`.
 - **Logs.** `list_recent_logs` is in the skill. An empty or `needs_correction` log-tool result is a filter miss until the new presence query in "Log searches" also returns nothing, and "Log searches" now filters on `entity.guids` (the log tools' parameter description says they filter on `entity.guid = '…'`). The log tools take `start_time_ms` and `end_time_ms`. New case `edge-09`.
 - **Smaller fixes.** A code fence in `queries.md` ("Is a broker reporting") that swallowed the next paragraph and heading is closed, `argument-hint` and the manifest no longer say "alert" only, and `SKILL.md` points to the `failure-modes.md` entries that have no `Concept:` line.
 - **Executed once on live telemetry (2026-11-13, a test account, the syslog of one infrastructure-agent host).** `entity.guids = '<host guid>'` returned 409 rows, the `LIKE` form returned 409, and `entity.guid = '<host guid>'` returned 0: these host log rows carry `entity.guids` and not `entity.guid`, which is why "Log searches" scopes by `entity.guids`. `FACET entity.guids` separated the host rows from APM rows in one query; `entity.name` had no values on the host rows. Not run: OpenTelemetry broker logs and the exception-class filters.
 - **`analyze_kafka_health` run live (2026-11-13, a test account, an OpenTelemetry test cluster with one producer service and one consumer service).** Seeded from the cluster with `include_topology`, the sweep returned the brokers, topics, both services and the broker containers and host, but `app_hosts` was empty, `app_host_cpu`, `app_host_memory` and `app_host_disk` were listed under `coverage.not_evaluated`, and the summary said it was not a clean bill of health. Seeded from the consumer service listed in `consumer_entities`, the same cluster scope came back with `app_hosts` filled (the consumer and producer containers and their host) and the app-host checks evaluated. This is the flow `edge-08` expects; it was observed, not scored.
-- `edge-08`, `edge-09` and the changed `trigger-10` are **not scored**. Every count above is over the original 33 cases, the 66-of-66 figure and its 0.1.1 label cover routing (which reads only the description), and the exception-class queries in "Log searches" have not been executed on live telemetry.
 
 ## Executed: behaviour with canned tool results
 

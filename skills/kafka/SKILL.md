@@ -8,7 +8,7 @@ argument-hint: "<kafka-entity-guid-or-name> [time-window] [question-or-alert-tex
 
 Answer a Kafka question from the account's own telemetry, or find the cause of a Kafka problem. A health check names a state, not a cause: for a problem, keep investigating until the evidence says what changed, on which component and when, or say plainly what stays unexplained.
 
-Read [queries.md](queries.md) before writing any NRQL (attribute names differ by provider); the sections named below are listed at its top. Read [failure-modes.md](failure-modes.md) when diagnosing a problem or answering a health question: open every entry whose `Concept:` or `Concepts:` line names a fired concept, "Nothing fired" when none fired, "A whole source went quiet" for a loss-of-signal alert, and "Client connection and access failures" for access or TLS symptoms.
+Read [queries.md](references/queries.md) before writing any NRQL (attribute names differ by provider); the sections named below are listed at its top. Read [failure-modes.md](references/failure-modes.md) when diagnosing a problem or answering a health question: open every entry whose `Concept:` or `Concepts:` line names a fired concept, "Nothing fired" when none fired, "A whole source went quiet" for a loss-of-signal alert, and "Client connection and access failures" for access or TLS symptoms.
 
 ## Tools
 
@@ -22,7 +22,12 @@ Read [queries.md](queries.md) before writing any NRQL (attribute names differ by
 | Logs around the onset | `analyze_entity_logs`, `list_recent_logs` | |
 | Any other measurement | `execute_nrql_query` | `queries.md` |
 
-Every tool is read-only. Call `list_available_new_relic_accounts` only when the user cannot name the account; it can return many rows. If the server does not offer `analyze_kafka_client_metrics`, use the "Client applications" queries instead.
+Every tool is read-only. Call `list_available_new_relic_accounts` only when the user cannot name the account; it can return many rows.
+
+**When a Kafka tool is not offered.** The server may not offer the three `analyze_kafka_*` tools in every account. Use `queries.md` with `execute_nrql_query` instead, and say which tool was missing:
+- No `analyze_kafka_health`: run "Broker health", "Consumer lag", "Throughput" and "Request latency" for the seed in one parallel batch; each abnormal result takes the place of a fired verdict when you open `failure-modes.md`.
+- No `analyze_kafka_related_entities`: take brokers and topics from "What exists", their hosts from "Host and JVM", and producer and consumer applications from "Client applications". These match by attribute, not by relationship: say so.
+- No `analyze_kafka_client_metrics`: use "Client applications".
 
 **Reach.** `analyze_kafka_health` and `analyze_kafka_related_entities` map the relationship graph up to 3 hops from the seed, the entity you pass them, and return it as `topology` (layers: cluster, broker, topic, application, host, container, pod). A layer missing from `topology` is not checked: it lies beyond 3 hops, was truncated, or has no ingested relationship. Seed `analyze_kafka_health` with a cluster, broker, topic or application; read a host, container or pod with "Host and JVM" in `queries.md`.
 
@@ -42,7 +47,7 @@ Take the first row that matches.
 | An alert, an incident, or "why" about lag, latency, partitions, a broker, rebalances or lost telemetry | Follow "Investigate a problem". |
 | A health question about a Kafka component with nothing alerting ("is it healthy", "how is X doing") | Resolve the seed and window (steps 1–2 of "Investigate a problem"), then sweep once (step 3). With none fired, report "nothing fired among the measured concepts", list everything under `coverage` and any empty layer in `topology` as not checked. A fired verdict makes it a problem: continue at step 4. |
 | What exists or is reporting: how many brokers, topics or groups, a list of them, "is X reporting" | `queries.md` "What exists": run the provider probes, then count with `uniqueCount`. With no cluster named ("how many brokers do I have"), facet by the cluster attribute and say which clusters the answer covers. |
-| What connects to what: which hosts run the brokers, which applications produce to or consume from a topic | `analyze_kafka_related_entities` from the topic, broker or application GUID. Do not count its list; counts come from `queries.md`. |
+| What connects to what: which hosts run the brokers, which applications produce to or consume from a topic | `analyze_kafka_related_entities` from the topic, broker or application GUID (not offered: see Tools). Do not count its list; counts come from `queries.md`. |
 | A value, ranking, comparison, trend or capacity | The ready query for that measure in `queries.md`; add `FACET <attribute> LIMIT <N>` for a top N. A comparison, trend or headroom question uses "Trends and capacity". |
 | A producer or consumer application's own behaviour | `analyze_kafka_client_metrics` on the application's GUID. An empty result is not evidence of health: the application may not report Kafka client metrics. If the tool is unavailable, use `queries.md` "Client applications"; use those queries too for a metric the tool does not return or a ranking across applications. |
 | A measure that is not listed, renamed or custom | `queries.md` "A measure that is not listed". |
@@ -55,7 +60,7 @@ For every answer from `queries.md`, report the measure, scope, window, unit and 
 
 1. **First seed.** Resolve the Kafka entity the question is about (for an alert, the alerting one) to a GUID: a cluster, broker, topic, or the producer or consumer application. A consumer group has no entity: seed from its consuming application when known, else from its topic, or its cluster where the provider has a cluster entity, and carry the group name into the reads. Use the GUID if given.
 2. **One window.** Convert it with `convert_time_period_to_epoch_ms`; pass `start_timestamp_ms` and `end_timestamp_ms`.
-3. **First sweep.** Call `analyze_kafka_health` from the seed with `include_topology` set to true. When the alert condition's number is known, pass it in `alert_thresholds`, keyed by concept (for example `consumer_group_lag`) and in the unit the verdict shows. To re-read one signal, call it again with `concepts` set (host, pod and container signals cannot be selected there: use "Host and JVM" in `queries.md`); do not sweep the same seed twice.
+3. **First sweep.** Call `analyze_kafka_health` from the seed with `include_topology` set to true (not offered: see Tools). When the alert condition's number is known, pass it in `alert_thresholds`, keyed by concept (for example `consumer_group_lag`) and in the unit the verdict shows. To re-read one signal, call it again with `concepts` set (host, pod and container signals cannot be selected there: use "Host and JVM" in `queries.md`); do not sweep the same seed twice.
 4. **Read it as a lead.** Fired verdicts come first, each with the NRQL that produced it, and `root_cause_layer` ranks the most upstream layer that fired. A concept reported as unmeasured or unavailable was not checked: say so, never healthy. A component the topology marks as not reporting stopped emitting; that does not by itself prove the broker stopped. Then check the reach: done when each layer the question needs is in `topology`, was read from a second seed, or is listed as not checked after that attempt. For a missing layer that matters, take the mapped entity next to it as the second seed (a consumer or producer app from `consumer_entities` or `producer_entities` for its container, pod or host; a broker for its container, pod or host): call `analyze_kafka_health` once from it, and read what it leaves unmeasured with "Host and JVM". Use at most one second seed, before step 5.
 5. **Find the mechanism.** In one parallel batch, then at most one more, choose what the fired verdicts need:
    - **Onset:** a `TIMESERIES` of the verdict's NRQL with `execute_nrql_query`, to show when it began and whether it continues.

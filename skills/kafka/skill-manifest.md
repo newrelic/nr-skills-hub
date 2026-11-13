@@ -6,18 +6,18 @@
 
 - **skill**
   - **name**: `newrelic/kafka`
-  - **version**: `0.1.1`
+  - **version**: `0.1.2`
   - **description**: Answers questions about Kafka from the account's own New Relic telemetry, and investigates Kafka problems and alerts to a root cause with a deterministic health check plus follow-up queries and logs. Covers nri-kafka, OpenTelemetry, AWS MSK and Confluent Cloud data.
 - **author**
   - **verified_identity**: `New Relic`
 
 ## Provenance and testing
 
-- **Skill version**: `0.1.1`
+- **Skill version**: `0.1.2`
 - **License**: Apache 2.0 (`LICENSE`, in this directory)
-- **Last tested**: 2026-11-12: trigger accuracy in Claude Code 2.1.311 with `claude-sonnet-5-5`, 66 of 66 over two runs of 33 cases with the hub's other three skills and a general investigation skill installed (`evals/eval_results.md`). Before that, 2026-10-21: routing accuracy on 33 cases, plus behaviour on 5 of them with canned tool results.
-- **Models used**: Claude Haiku and Claude Sonnet (run as sub-agents of Claude Code with the `haiku` and `sonnet` aliases; the exact version is not recorded by the harness). The 2026-11-12 trigger run used `claude-sonnet-5-5` through `claude -p`.
-- **Results**: trigger 66 of 66 on 2026-11-12 (62 of 66 for 0.1.0); routing 32 of 33 per model, with the two models agreeing on every Kafka-or-not decision; behaviour on canned results 5 of 5 for Sonnet and 4 of 5 for Haiku (one partial, since corrected in `queries.md`). Details and known gaps in `evals/eval_results.md`.
+- **Last tested**: 2026-11-13: trigger accuracy in Claude Code 2.1.311 with `claude-sonnet-5-5`, 70 of 70 over two runs of 35 cases with the hub's other three skills and a general investigation skill installed (`evals/eval_results.md`); 2026-11-12: 66 of 66 on 33 cases for 0.1.1. Before that, 2026-10-21: routing accuracy on 33 cases, plus behaviour on 5 of them with canned tool results.
+- **Models used**: Claude Haiku and Claude Sonnet (run as sub-agents of Claude Code with the `haiku` and `sonnet` aliases; the exact version is not recorded by the harness). The 2026-11-12 and 2026-11-13 trigger runs used `claude-sonnet-5-5` through `claude -p`.
+- **Results**: trigger 70 of 70 on 2026-11-13 for 0.1.2, 66 of 66 on 2026-11-12 for 0.1.1 (62 of 66 for 0.1.0); routing 32 of 33 per model, with the two models agreeing on every Kafka-or-not decision; behaviour on canned results 5 of 5 for Sonnet and 4 of 5 for Haiku (one partial, since corrected in `queries.md`). Details and known gaps in `evals/eval_results.md`.
 - **NRQL checked**: the NRQL in `queries.md` was executed on 2026-10-14 against live telemetry for each provider it covers (OpenTelemetry, nri-kafka, AWS MSK stream and polled, Confluent Cloud, APM agent), except the parts listed here, which have not been executed: the one-day lookback on last-report reads, the per-partition grain for nri-kafka lag, the `direction` split on `kafka.topic.io`, the account-wide counts, and the "Trends and capacity", "Log searches" and "Hosts, containers and Kubernetes" sections.
 - **Not yet scored**: any run against live telemetry. No run has used `analyze_kafka_related_entities` or `analyze_kafka_client_metrics` against a real account, so the shape of their output as the skill reads it is unverified. `analyze_kafka_health` and the log queries were each checked once on a test account (`evals/eval_results.md`).
 
@@ -41,6 +41,7 @@ Model behaviour drifts between versions, so any results recorded here are valid 
 - **handles_sensitive_data**: `true`
 - **data_categories**:
   - `pii`
+  - `credentials`
   - `confidential`
 - **data_egress**: New Relic MCP server (NerdGraph) over HTTPS. It is the only destination the skill sends to, and the skill reaches it only through the MCP client's existing authenticated connection. Query results additionally enter the agent's model context, so the customer's configured LLM inference provider receives them.
 - **third_party_subprocessors**:
@@ -55,16 +56,16 @@ Model behaviour drifts between versions, so any results recorded here are valid 
 - **oauth_scopes**:
   - `observability:read`
 - **mcp_tools**:
-  - `analyze_kafka_health`: read-only, preview; one deterministic health sweep of a Kafka entity per seed (one, plus at most one second seed).
-  - `analyze_kafka_client_metrics`: read-only, preview; the Kafka client-library metrics of one producer or consumer application, used when the server offers it, otherwise the queries in `queries.md`.
-  - `analyze_kafka_related_entities`: read-only, preview; the brokers, topics, applications and hosts around an entity.
+  - `analyze_kafka_health`: read-only; one deterministic health sweep of a Kafka entity per seed (one, plus at most one second seed).
+  - `analyze_kafka_client_metrics`: read-only; the Kafka client-library metrics of one producer or consumer application, used when the server offers it, otherwise the queries in `references/queries.md`.
+  - `analyze_kafka_related_entities`: read-only; the brokers, topics, applications and hosts around an entity.
   - `analyze_entity_logs`: read-only; error patterns in the logs of one entity over the onset window (at most a day).
   - `list_recent_logs`: read-only; the raw log lines of one entity over the onset window, newest first (50 by default).
   - `get_entity`: read-only; resolves a name to an entity GUID and its account.
   - `convert_time_period_to_epoch_ms`: read-only; converts a described window to epoch bounds.
-  - `execute_nrql_query`: read-only; every query in `queries.md`.
+  - `execute_nrql_query`: read-only; every query in `references/queries.md`.
   - `list_available_new_relic_accounts`: read-only; called only if the user cannot name an account, since it can return several hundred rows.
-  Every tool is read-only. `analyze_kafka_health`, `analyze_kafka_related_entities` and `analyze_kafka_client_metrics` carry the server's `preview` maturity tag: their names, parameters and response shape may change without notice, so re-run `evals/` after a tool release.
+  Every tool is read-only. `analyze_kafka_health`, `analyze_kafka_related_entities` and `analyze_kafka_client_metrics` are public; the server may not offer them in every account, and the skill then uses `references/queries.md` ("When a Kafka tool is not offered" in `SKILL.md`). Re-run `evals/` after a tool release.
 
 - **network_access**: `true`
 - **network_endpoints**:
@@ -73,7 +74,7 @@ Model behaviour drifts between versions, so any results recorded here are valid 
     **justification**: Sole transport for all tool calls. The skill issues no raw HTTP of its own: every request travels over the MCP client's existing authenticated connection.
 - **filesystem_access**: `true`
 - **filesystem_paths**:
-  - **path**: `queries.md` and `failure-modes.md` (inside the skill's own bundle)
+  - **path**: `references/queries.md` and `references/failure-modes.md` (inside the skill's own bundle)
     **justification**: Read-only reference files shipped with the skill: the NRQL for each provider, and the guide to what each health concept can mean. The skill reads no other path and writes nothing.
 - **shell_or_code_execution**: `false`
 - **code_execution_details**: Not applicable. The skill is Markdown instructions only. It bundles no scripts and instructs no shell, package-manager, download or `eval` step. The NRQL it runs executes server-side inside New Relic.

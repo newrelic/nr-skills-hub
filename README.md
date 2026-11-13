@@ -48,7 +48,9 @@ privileges, and required scopes. Read it before enabling that skill.
 skills/
 └── <skill-name>/
     ├── SKILL.md                  # the instructions the agent loads
-    ├── queries.md                # NRQL reference the skill reads
+    ├── references/               # files SKILL.md links to and the agent reads when needed
+    │   ├── queries.md            # NRQL reference
+    │   └── ...                   # any other reference, e.g. kafka's failure-modes.md
     ├── skill-manifest.md         # provenance, test record, and security disclosure
     ├── LICENSE                   # Apache 2.0
     └── evals/
@@ -60,7 +62,7 @@ skills/
 
 Copy the skill directory you want into your agent's skills location — for Claude Code that is
 `.claude/skills/<skill-name>/` in your project, or `~/.claude/skills/<skill-name>/` for all
-projects. Keep `queries.md` alongside `SKILL.md`; the skills read it.
+projects. Copy the whole directory: `SKILL.md` reads the files beside it (`references/`, or `queries.md` in the skills that keep it next to `SKILL.md`).
 
 You will also need the New Relic MCP server configured in your client, authenticated with
 `observability:read`.
