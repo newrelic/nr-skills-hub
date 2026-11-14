@@ -6,14 +6,14 @@
 
 - **skill**
   - **name**: `newrelic/kafka`
-  - **version**: `1.0.0`
+  - **version**: `0.1.0`
   - **description**: Answers questions about Kafka from the account's own New Relic telemetry, and investigates Kafka problems and alerts to a root cause with a deterministic health check plus follow-up queries and logs. Covers nri-kafka, OpenTelemetry, AWS MSK and Confluent Cloud data.
 - **author**
   - **verified_identity**: `New Relic`
 
 ## Provenance and testing
 
-- **Skill version**: `1.0.0`
+- **Skill version**: `0.1.0`
 - **License**: Apache 2.0 (`LICENSE`, in this directory)
 - **Last tested**: 2026-11-13: trigger accuracy in Claude Code 2.1.311 with `claude-sonnet-5-5`, 70 of 70 over two runs of 35 cases with the hub's other three skills and a general investigation skill installed (`evals/eval_results.md`).
 - **Models used**: `claude-sonnet-5-5`, run through `claude -p` in Claude Code 2.1.311.

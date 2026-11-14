@@ -6,7 +6,7 @@ This is the first version of the skill; the results are for it. The method is in
 
 | Date | Version | Model | Harness | Scope | Result |
 |---|---|---|---|---|---|
-| 2026-11-13 | 1.0.0 | `claude-sonnet-5-5` | `claude -p` (Claude Code 2.1.311), this repository's skills plus a general investigation skill, only `Skill` and `Read` allowed, no MCP server | Trigger accuracy, 35 cases, two runs each | 70 of 70 |
+| 2026-11-13 | 0.1.0 | `claude-sonnet-5-5` | `claude -p` (Claude Code 2.1.311), this repository's skills plus a general investigation skill, only `Skill` and `Read` allowed, no MCP server | Trigger accuracy, 35 cases, two runs each | 70 of 70 |
 
 The scored run used no real account or telemetry. The only live checks are one log-scoping query and one run of each Kafka tool (`analyze_kafka_health`, `analyze_kafka_related_entities`, `analyze_kafka_client_metrics`) on a test account (the 2026-11-13 and 2026-11-14 notes below); the rest of live execution is under [Still not scored](#still-not-scored-live-execution).
 
@@ -40,9 +40,9 @@ The three Kafka tools are public. The server may not offer them in every account
 
 ## Executed: trigger accuracy, 70 of 70 (2026-11-13)
 
-Method: `claude -p` (Claude Code 2.1.311, `claude-sonnet-5-5`) in an empty project whose `.claude/skills/` held this repository's four skills (`apm-error-investigation`, `discover-trace`, `kafka`, `nl2-nrql`) and a fifth, general investigation skill, and no user plugins (`--setting-sources project`). Each of the 35 cases ran twice on version 1.0.0 (the text in this commit), stopped after two turns, with only `Skill` and `Read` allowed and no MCP server attached. Scored: whether `Skill` loaded `kafka`, against `expect.skill_invoked`. Recorded, not scored: the first skill each run loaded, and which skill file it read next.
+Method: `claude -p` (Claude Code 2.1.311, `claude-sonnet-5-5`) in an empty project whose `.claude/skills/` held this repository's four skills (`apm-error-investigation`, `discover-trace`, `kafka`, `nl2-nrql`) and a fifth, general investigation skill, and no user plugins (`--setting-sources project`). Each of the 35 cases ran twice on version 0.1.0 (the text in this commit), stopped after two turns, with only `Skill` and `Read` allowed and no MCP server attached. Scored: whether `Skill` loaded `kafka`, against `expect.skill_invoked`. Recorded, not scored: the first skill each run loaded, and which skill file it read next.
 
-| Category | 1.0.0 |
+| Category | 0.1.0 |
 |---|---|
 | Trigger accuracy | 32 of 32 |
 | Negative controls | 14 of 14 |
