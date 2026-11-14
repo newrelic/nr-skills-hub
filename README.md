@@ -14,10 +14,13 @@ Everything here is **read-only** and needs a single OAuth 2.0 scope: `observabil
 | [`nl2-nrql`](skills/nl2-nrql/) | Turns a plain-English question into one schema-validated NRQL query. Discovers the account's real event types and attributes first, then proves the finished query parses. | One NRQL query |
 | [`discover-trace`](skills/discover-trace/) | Finds distributed trace IDs matching what you describe and presents every match. | A candidate list, for you to choose from |
 | [`apm-error-investigation`](skills/apm-error-investigation/) | Root-causes a backend APM error end to end: resolves the entity, ranks error groups by real impact, follows the chosen trace across services, correlates logs. | An evidence-backed report |
+| [`kafka`](skills/kafka/) | Answers Kafka questions from your telemetry (what exists, current values and rankings, a producer or consumer app's behaviour) and investigates a Kafka problem or alert to a root cause: one health sweep, then onset, log and application checks. Works with nri-kafka, OpenTelemetry, AWS MSK and Confluent Cloud data. | A root cause with findings, next steps and open questions |
 
-They are deliberately layered. `nl2-nrql` authors a query; `discover-trace` finds candidates and
-hands off; `apm-error-investigation` runs the full investigation. Pick the one whose stopping
-point matches what you want.
+The first three are deliberately layered. `nl2-nrql` authors a query; `discover-trace` finds
+candidates and hands off; `apm-error-investigation` runs the full investigation. Pick the one whose
+stopping point matches what you want. `kafka` is a domain skill: it covers the Kafka stack from a
+simple count to an alert's root cause, and leaves general NRQL, traces and application errors to the
+skills above.
 
 > [!NOTE]
 > `apm-error-investigation` needs a trace tool that may not be available in every environment yet.
@@ -45,7 +48,9 @@ privileges, and required scopes. Read it before enabling that skill.
 skills/
 └── <skill-name>/
     ├── SKILL.md                  # the instructions the agent loads
-    ├── queries.md                # NRQL reference the skill reads
+    ├── references/               # files SKILL.md links to and the agent reads when needed
+    │   ├── queries.md            # NRQL reference
+    │   └── ...                   # any other reference, e.g. kafka's failure-modes.md
     ├── skill-manifest.md         # provenance, test record, and security disclosure
     ├── LICENSE                   # Apache 2.0
     └── evals/
@@ -57,7 +62,7 @@ skills/
 
 Copy the skill directory you want into your agent's skills location — for Claude Code that is
 `.claude/skills/<skill-name>/` in your project, or `~/.claude/skills/<skill-name>/` for all
-projects. Keep `queries.md` alongside `SKILL.md`; the skills read it.
+projects. Copy the whole directory: `SKILL.md` reads the files beside it (`references/`, or `queries.md` in the skills that keep it next to `SKILL.md`).
 
 You will also need the New Relic MCP server configured in your client, authenticated with
 `observability:read`.

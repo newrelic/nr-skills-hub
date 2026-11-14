@@ -18,12 +18,14 @@ and to which marketplaces — before they are merged here. The per-skill bar is:
   field it carries: identity, provenance and testing, input trust, data handling, privilege and
   actions, and transparency. Answer the security disclosures accurately; they drive the reviewer's
   risk rating and the customer's trust decision.
+- Any other file the agent reads (NRQL, failure modes) under `references/`, linked from `SKILL.md`
+  with when to read it, one level deep.
 - Minimum required OAuth 2.0 scopes stated explicitly.
 - No `curl`, `wget`, or binary execution steps.
 - `evals/test_cases.json` covering trigger accuracy, negative controls, and edge cases, plus
   `evals/eval_results.md` recording a real run.
-- Coexistence tested against the skills already in this repository — the three published here
-  overlap on NRQL, trace, and error territory, so false-positive triggering is the live risk.
+- Coexistence tested against the skills already in this repository — they overlap on NRQL, trace,
+  error and Kafka territory, so false-positive triggering is the live risk.
 - Apache 2.0 `LICENSE` in the skill directory.
 - An owning team added to [`REGISTRY.md`](REGISTRY.md).
 - PR approved by Security Engineering and a Product lead.
