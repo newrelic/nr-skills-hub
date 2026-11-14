@@ -19,7 +19,7 @@
 - **Models used**: Claude Haiku and Claude Sonnet (run as sub-agents of Claude Code with the `haiku` and `sonnet` aliases; the exact version is not recorded by the harness). The 2026-11-12 and 2026-11-13 trigger runs used `claude-sonnet-5-5` through `claude -p`.
 - **Results**: trigger 70 of 70 on 2026-11-13 for 0.1.2, 66 of 66 on 2026-11-12 for 0.1.1 (62 of 66 for 0.1.0); routing 32 of 33 per model, with the two models agreeing on every Kafka-or-not decision; behaviour on canned results 5 of 5 for Sonnet and 4 of 5 for Haiku (one partial, since corrected in `queries.md`). Details and known gaps in `evals/eval_results.md`.
 - **NRQL checked**: the NRQL in `queries.md` was executed on 2026-10-14 against live telemetry for each provider it covers (OpenTelemetry, nri-kafka, AWS MSK stream and polled, Confluent Cloud, APM agent), except the parts listed here, which have not been executed: the one-day lookback on last-report reads, the per-partition grain for nri-kafka lag, the `direction` split on `kafka.topic.io`, the account-wide counts, and the "Trends and capacity", "Log searches" and "Hosts, containers and Kubernetes" sections.
-- **Not yet scored**: any run against live telemetry. No run has used `analyze_kafka_related_entities` or `analyze_kafka_client_metrics` against a real account, so the shape of their output as the skill reads it is unverified. `analyze_kafka_health` and the log queries were each checked once on a test account (`evals/eval_results.md`).
+- **Not yet scored**: any run of the skill's cases against live telemetry. `analyze_kafka_health`, `analyze_kafka_related_entities`, `analyze_kafka_client_metrics` and the log queries were each run once on a test account with an OpenTelemetry Kafka cluster (`evals/eval_results.md`); the nri-kafka, AWS MSK, Confluent Cloud and APM paths were not run live.
 
 Model behaviour drifts between versions, so any results recorded here are valid for the models and date given only. Re-run `evals/` when the upstream model version changes, or when a New Relic agent or MCP tool release could change the metric names and attributes this skill queries.
 
@@ -41,7 +41,6 @@ Model behaviour drifts between versions, so any results recorded here are valid 
 - **handles_sensitive_data**: `true`
 - **data_categories**:
   - `pii`
-  - `credentials`
   - `confidential`
 - **data_egress**: New Relic MCP server (NerdGraph) over HTTPS. It is the only destination the skill sends to, and the skill reaches it only through the MCP client's existing authenticated connection. Query results additionally enter the agent's model context, so the customer's configured LLM inference provider receives them.
 - **third_party_subprocessors**:
@@ -49,7 +48,7 @@ Model behaviour drifts between versions, so any results recorded here are valid 
 - **data_retention**: None by the skill. It writes no files, stores no state, and caches nothing between runs. The New Relic MCP server separately records one tool-invocation event per call (see `data_logging`).
 - **data_logging**: None written by the skill. The New Relic MCP server records a tool-invocation event per call containing the invoking user's email and ID, the organization ID, and each tool parameter as `param_<name>` truncated to 100 characters. Parameter keys named exactly `password`, `token`, `key` or `secret` are omitted; `nrql_query` is not, so every query, including literal values in `WHERE` clauses, is recorded. The skill itself reads and logs no credential.
 
-**Scope note.** The skill reads Kafka metrics, Kafka integration events and entity relationships: infrastructure identifiers and numbers. For a problem it also reads logs for the broker or application involved, through `analyze_entity_logs` or `list_recent_logs` and the log excerpts in the health result; it never reads Kafka message contents. Log lines can carry credentials or personal data written by the application, and `SKILL.md` limits what the skill quotes, but that reduces what is repeated and does not remove it from the model's context. Customers who write secrets or personal data into logs should scrub them at the log-forwarding layer. Names of topics, groups and clients are chosen by the customer, so they can carry business meaning.
+**Scope note.** The skill reads Kafka metrics, Kafka integration events and entity relationships: infrastructure identifiers and numbers. For a problem it also reads logs for the broker or application involved, through `analyze_entity_logs` or `list_recent_logs` and the log excerpts in the health result; it never reads Kafka message contents. The skill reads no credentials, tokens or key stores. Log lines are written by the monitored application and can carry personal data; `SKILL.md` limits what the skill quotes, but that reduces what is repeated and does not remove it from the model's context. Customers who write personal or other sensitive data into logs should scrub it at the log-forwarding layer. Names of topics, groups and clients are chosen by the customer, so they can carry business meaning.
 
 ### Privilege & actions
 
