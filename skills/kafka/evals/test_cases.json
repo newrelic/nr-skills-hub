@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "skill": "newrelic/kafka",
-  "skill_version": "0.1.1",
+  "skill_version": "1.0.0",
   "notes": "Categories map to the EPD evaluation protocol: trigger accuracy, negative controls, edge cases, coexistence. 'expect' describes observable behaviour, not internal state, so a human or a judge model can score a run without instrumentation. Substitute a real account ID for <ACCOUNT_ID> when running these cases; no account identifier is hardcoded here. Cases that mention analyze_kafka_health expect the health-tool path.",
   "cases": [
     {

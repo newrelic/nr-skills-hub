@@ -6,20 +6,20 @@
 
 - **skill**
   - **name**: `newrelic/kafka`
-  - **version**: `0.1.2`
+  - **version**: `1.0.0`
   - **description**: Answers questions about Kafka from the account's own New Relic telemetry, and investigates Kafka problems and alerts to a root cause with a deterministic health check plus follow-up queries and logs. Covers nri-kafka, OpenTelemetry, AWS MSK and Confluent Cloud data.
 - **author**
   - **verified_identity**: `New Relic`
 
 ## Provenance and testing
 
-- **Skill version**: `0.1.2`
+- **Skill version**: `1.0.0`
 - **License**: Apache 2.0 (`LICENSE`, in this directory)
-- **Last tested**: 2026-11-13: trigger accuracy in Claude Code 2.1.311 with `claude-sonnet-5-5`, 70 of 70 over two runs of 35 cases with the hub's other three skills and a general investigation skill installed (`evals/eval_results.md`); 2026-11-12: 66 of 66 on 33 cases for 0.1.1. Before that, 2026-10-21: routing accuracy on 33 cases, plus behaviour on 5 of them with canned tool results.
-- **Models used**: Claude Haiku and Claude Sonnet (run as sub-agents of Claude Code with the `haiku` and `sonnet` aliases; the exact version is not recorded by the harness). The 2026-11-12 and 2026-11-13 trigger runs used `claude-sonnet-5-5` through `claude -p`.
-- **Results**: trigger 70 of 70 on 2026-11-13 for 0.1.2, 66 of 66 on 2026-11-12 for 0.1.1 (62 of 66 for 0.1.0); routing 32 of 33 per model, with the two models agreeing on every Kafka-or-not decision; behaviour on canned results 5 of 5 for Sonnet and 4 of 5 for Haiku (one partial, since corrected in `queries.md`). Details and known gaps in `evals/eval_results.md`.
-- **NRQL checked**: the NRQL in `queries.md` was executed on 2026-10-14 against live telemetry for each provider it covers (OpenTelemetry, nri-kafka, AWS MSK stream and polled, Confluent Cloud, APM agent), except the parts listed here, which have not been executed: the one-day lookback on last-report reads, the per-partition grain for nri-kafka lag, the `direction` split on `kafka.topic.io`, the account-wide counts, and the "Trends and capacity", "Log searches" and "Hosts, containers and Kubernetes" sections.
-- **Not yet scored**: any run of the skill's cases against live telemetry. `analyze_kafka_health`, `analyze_kafka_related_entities`, `analyze_kafka_client_metrics` and the log queries were each run once on a test account with an OpenTelemetry Kafka cluster (`evals/eval_results.md`); the nri-kafka, AWS MSK, Confluent Cloud and APM paths were not run live.
+- **Last tested**: 2026-11-13: trigger accuracy in Claude Code 2.1.311 with `claude-sonnet-5-5`, 70 of 70 over two runs of 35 cases with the hub's other three skills and a general investigation skill installed (`evals/eval_results.md`).
+- **Models used**: `claude-sonnet-5-5`, run through `claude -p` in Claude Code 2.1.311.
+- **Results**: first version. Trigger accuracy 70 of 70 on 2026-11-13. Behaviour (tool calls and answers) is not scored. Details and known gaps in `evals/eval_results.md`.
+- **NRQL checked**: the NRQL in `queries.md` was executed on 2026-10-14 against live telemetry for each provider it covers (OpenTelemetry, nri-kafka, AWS MSK stream and polled, Confluent Cloud, APM agent), except the parts listed here, which have not been executed: the one-day lookback on last-report reads, the per-partition grain for nri-kafka lag, the `direction` split on `kafka.topic.io`, the account-wide counts, and the "Trends and capacity" section, the exception-class filters in "Log searches", and "Hosts, containers and Kubernetes" except its nri-kafka host query and Docker container query (each run once on 2026-11-14).
+- **Not yet scored**: any run of the skill's cases against live telemetry. `analyze_kafka_health`, `analyze_kafka_related_entities`, `analyze_kafka_client_metrics` and the log queries were each run once on a test account with an OpenTelemetry Kafka cluster, and `analyze_kafka_related_entities` also on two nri-kafka clusters (`evals/eval_results.md`); the AWS MSK and Confluent Cloud paths, and the client-metrics tool on nri-kafka or APM applications, were not run live.
 
 Model behaviour drifts between versions, so any results recorded here are valid for the models and date given only. Re-run `evals/` when the upstream model version changes, or when a New Relic agent or MCP tool release could change the metric names and attributes this skill queries.
 
