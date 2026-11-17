@@ -41,7 +41,7 @@ what looks like trusted infrastructure data.
 
 Each `SKILL.md` instructs the model to treat retrieved telemetry as data rather than
 instructions, and to quote and flag anything that reads like a directive instead of acting on
-it. `apm-error-investigation` carries the highest exposure of the three, because error messages
+it. `apm-error-investigation` carries the highest exposure of these skills, because error messages
 drive its ranking and the ranking selects which trace it investigates — so injected text there
 can attempt to steer the investigation itself, not merely the wording of a report.
 
@@ -52,7 +52,7 @@ headers, those log bodies can contain `authorization: Bearer …` values. Any sk
 messages can pull such a value into the agent transcript and into your model provider's request
 payload.
 
-`apm-error-investigation` truncates log messages to bound this. **Truncation limits context
+`apm-error-investigation` truncates log messages to bound this, and `kafka` quotes only the error class and a short excerpt of a line. **Truncation limits context
 size; it does not reliably remove secrets** — a token near the start of a header dump still
 falls inside the truncated window. Scrub at the log-forwarding layer. Do not treat any skill in
 this repository as a redaction control.
@@ -91,7 +91,7 @@ Code, Cursor, Codex, or a custom runtime, we recommend the following controls.
 
 | Resource | Access |
 |---|---|
-| Filesystem | Read-only, and only the skill's own bundled reference files (`queries.md`). No writes. |
+| Filesystem | Read-only, and only the skill's own bundled reference files (`queries.md`, or the files under `references/`). No writes. |
 | Network | The New Relic MCP server host configured in your MCP client, port 443, via your client's existing authenticated connection. No raw HTTP of the skill's own. |
 | Shell / code execution | None. |
 | Secrets, environment variables, key stores | None read. Authentication is handled entirely by your MCP client and the server's OAuth 2.0 layer. |
