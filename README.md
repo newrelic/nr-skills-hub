@@ -67,6 +67,9 @@ projects. Copy the whole directory: `SKILL.md` reads the files beside it (`refer
 You will also need the New Relic MCP server configured in your client, authenticated with
 `observability:read`.
 
+To check whether your copy is current, compare the `version` in its `skill-manifest.md` with
+[`REGISTRY.md`](REGISTRY.md). What changed between versions is in [`CHANGELOG.md`](CHANGELOG.md).
+
 ## Testing and maintenance
 
 Model behaviour drifts between versions, so each skill records the models, version, and date of its

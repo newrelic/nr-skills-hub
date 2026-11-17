@@ -28,4 +28,33 @@ and to which marketplaces — before they are merged here. The per-skill bar is:
   error and Kafka territory, so false-positive triggering is the live risk.
 - Apache 2.0 `LICENSE` in the skill directory.
 - An owning team added to [`REGISTRY.md`](REGISTRY.md).
+- An entry under **Added** in [`CHANGELOG.md`](CHANGELOG.md).
 - PR approved by Security Engineering and a Product lead.
+
+## Changing a published skill
+
+A change to any file the agent loads (`SKILL.md`, anything under `references/`, or a `queries.md`
+kept next to `SKILL.md`) is a new version of the skill. In the same PR:
+
+- Bump `version` under **Identity** in `skill-manifest.md` and the skill's row in
+  [`REGISTRY.md`](REGISTRY.md).
+- Leave `Skill version` under **Provenance and testing** alone unless you re-ran the evals. It
+  records the version the test results apply to.
+- Add an entry to [`CHANGELOG.md`](CHANGELOG.md) under today's date, newest first: the skill, its
+  old and new version, and what changed in words a user of the skill would follow. Link the PR.
+  Written this way, #6 would have been:
+
+  ```markdown
+  - `apm-error-investigation` 1.0.0 → 2.0.0. Step 4 uses `get_distributed_trace_details` instead
+    of `get_trace_summary` and `get_trace_entity_details`. ([#6](https://github.com/newrelic/nr-skills-hub/pull/6))
+  ```
+
+Pick the version with [semantic versioning](https://semver.org/):
+
+- Major: someone already using the skill may need to act. It needs an MCP tool or OAuth scope it
+  did not need before, drops something it used to do, or stops at a different point.
+- Minor: the skill does something new and everything it did before still works the same way.
+- Patch: a fix that leaves behaviour as documented, such as a corrected query or clearer wording.
+
+Changes to `skill-manifest.md`, `evals/` or `LICENSE` alone do not change the version and need no
+changelog entry.
